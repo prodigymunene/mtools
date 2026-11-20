@@ -67,17 +67,22 @@ function endOfMonth(date) {
   return new Date(date.getFullYear(), date.getMonth() + 1, 0);
 }
 
-// Monthly rates confirmed by matching full amortization schedules row-by-row
-// against reference screenshots (exact match at 12/18/24/36/48mo; 60mo is a
-// single-point estimate since only one installment row was available).
-const RATE_TABLE = [
-  { term: 12, rate: 6.6152, verified: true },
-  { term: 18, rate: 6.4576, verified: true },
-  { term: 24, rate: 6.2685, verified: true },
-  { term: 36, rate: 5.924, verified: true },
-  { term: 48, rate: 5.648, verified: true },
-  { term: 60, rate: 5.429, verified: false },
-];
+// The lender's reducing-balance monthly rate for each term is the rate whose
+// level installment equals a 4% FLAT monthly rate: P * (1/n + 0.04).
+// Computed at full precision (rounding it to 4 decimals caused 1-2 shilling
+// errors). Checked row-by-row against 10 real schedules (12/18/24/36 months,
+// 200k-1M): every installment matches; one row of one 36-month schedule
+// differs by 1 shilling in the principal/interest split.
+const LENDER_FLAT_RATE = 0.04;
+function flatEquivalentRatePct(n, flat = LENDER_FLAT_RATE) {
+  let lo = 1e-9, hi = 0.5;
+  for (let k = 0; k < 200; k++) {
+    const m = (lo + hi) / 2;
+    if (m / (1 - Math.pow(1 + m, -n)) > 1 / n + flat) hi = m; else lo = m;
+  }
+  return ((lo + hi) / 2) * 100;
+}
+const RATE_TABLE = [12, 18, 24, 36, 48, 60].map((term) => ({ term, rate: flatEquivalentRatePct(term), verified: term <= 36 }));
 
 // Capitalized fee formula, confirmed EXACTLY (zero deviation) against 11
 // reference loans: 150k->18,055, 200k->20,230, 250k->22,405, 300k->24,580,
@@ -773,10 +778,7 @@ const FINDER_FEE_INTERCEPT = 11530;
 const FINDER_TRACKING_FEE = 2000;
 const FINDER_EXCISE_RATE = 0.008;
 const FINDER_COLORS = ["#2E6F5C", "#2B4C7E", "#5E4A7A", "#8E3B4F", "#9A7B3C", "#A04A3B"];
-const FINDER_RATES = [
-  { term: 12, rate: 6.6152 }, { term: 18, rate: 6.4576 }, { term: 24, rate: 6.2685 },
-  { term: 36, rate: 5.924 }, { term: 48, rate: 5.648 }, { term: 60, rate: 5.429 },
-];
+const FINDER_RATES = RATE_TABLE.map(({ term, rate }) => ({ term, rate }));
 
 const finderMoney = (n) => "KSh " + Math.round(n).toLocaleString("en-US");
 const finderMoney2 = (n) => "KSh " + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
