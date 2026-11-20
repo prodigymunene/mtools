@@ -559,7 +559,7 @@ function LoanCalculator() {
           <div style={{ marginTop: "10px", fontSize: "12.5px", color: TOKENS.ink }}>
             Monthly installment:{" "}
             <strong style={{ color: TOKENS.tealDeep, fontFamily: "'IBM Plex Mono', monospace" }}>
-              {fmtKSh(result.pmtPI + (Number(monthlyFee) || 0))}
+              {fmtKSh(Math.round(result.pmtPI) + (Number(monthlyFee) || 0))}
             </strong>
           </div>
 
@@ -606,8 +606,8 @@ function LoanCalculator() {
           >
             {[
               { label: "Principal disbursed", value: fmtKSh(result.principal) },
-              { label: "Installment (P + I + Fee)", value: fmtKSh(result.pmtPI + (Number(monthlyFee) || 0)) },
-              { label: "Total paid back", value: fmtKSh((result.pmtPI + (Number(monthlyFee) || 0)) * Math.max(1, Number(termMonths) || 1)) },
+              { label: "Installment (P + I + Fee)", value: fmtKSh(Math.round(result.pmtPI) + (Number(monthlyFee) || 0)) },
+              { label: "Total paid back", value: fmtKSh(result.totals.totalPayment) },
               { label: "Expected closure", value: fmtDate(result.closureDate) },
             ].map((card, idx) => (
               <div key={idx} style={{ background: TOKENS.paperAlt, padding: "14px 16px" }}>
